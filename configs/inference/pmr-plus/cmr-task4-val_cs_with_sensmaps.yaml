@@ -1,0 +1,108 @@
+# CMR Task4 inference configuration with sensitivity maps logging
+# Based on cmr-task4-val_cs.yaml with wandb logging for sensitivity maps
+#ckpt_path: /common/lidxxlab/Yi/augmented_data_training_results1015/16cascade_with_data_augmentation_continue/cmr2024_2025_augmented/1hgnz3ej/checkpoints/best-epochepoch=04-valvalidation_loss=0.0271.ckpt
+#ckpt_path: /common/lidxxlab/chushu/augmented_data_training_results1015/16cascade_with_data_augmentation_continue/cmr2024_2025_augmented/2ob79yr3/checkpoints/best-epochepoch=04-valvalidation_loss=0.0133.ckpt
+ckpt_path: /common/lidxxlab/chushu/augmented_data_training_results1015/16cascade_with_data_augmentation_continue/cmr2024_2025_augmented/2ob79yr3/checkpoints/best-epochepoch=05-valvalidation_loss=0.0132.ckpt
+#ckpt_path: /common/lidxxlab/Yi/augmented_data_training_results1015/16cascade_with_data_augmentation_continue/cmr2024_2025_augmented/1hgnz3ej/checkpoints/best-epochepoch=04-valvalidation_loss=0.0271.ckpt
+
+#ckpt_path: /common/lidxxlab/chushu/augmented_data_training_results/16cascade_with_data_augmentation/cmr2024_2025_augmented/8ydpc561/checkpoints/best-epochepoch=05-valvalidation_loss=0.0224.ckpt
+
+data:
+  class_path: pl_modules.InferenceDataModule
+  init_args:
+    slice_dataset: data.CmrxReconInferenceSliceDataset
+    data_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Validation/Task4/TaskS2/MultiCoil
+    challenge: multicoil
+    test_transform:
+      class_path: data.CmrxReconDataTransform
+      init_args:
+        mask_func: null
+        uniform_resolution: null
+        use_seed: True
+        mask_type: 'cartesian_or_radial'
+        test_num_low_frequencies: 16
+        uniform_resolution: null
+        use_seed: true
+    num_adj_slices: 5
+    batch_size: 1
+    num_workers: 4
+    distributed_sampler: false
+    test_filter: 
+      class_path: data.FuncFilterString
+      init_args:
+        filter_str: null
+        #/Cine/ValidationSet/UnderSample_TaskS2
+
+# Dataset specific settings
+seed_everything: 42
+
+trainer:
+  accelerator: gpu
+  strategy: auto
+  devices: 4
+  precision: 16 
+  num_nodes: 1
+
+  # Wandb logger for sensitivity maps logging
+  logger:
+    class_path: lightning.pytorch.loggers.WandbLogger
+    init_args:
+      project: "promptmr-plus-cmr-task4-inference-sensmaps"
+      name: "cmr-task4-val_cs_with_sensmaps"
+      save_dir: "/common/lidxxlab/chushu/PromptMR-plus-Task4_debug/wandb_logs"
+      tags: ["inference", "cmr-task4", "sensitivity-maps", "val_cs"]
+
+  callbacks:
+    # Prediction writer for saving reconstructions
+    - class_path: __main__.CustomWriter
+      init_args:
+        output_dir: /common/lidxxlab/cmrchallenge/code/Inference/inf_augmented_cs1020_small_fov_epoch3
+        write_interval: batch_and_epoch
+
+model:
+  class_path: pl_modules.PromptMrModule
+  init_args:
+    # Model architecture 
+    num_cascades: 16
+    num_adj_slices: 5
+    n_feat0: 48
+    
+    # Feature dimensions
+    feature_dim: [72, 96, 120]
+    prompt_dim: [24, 48, 72]
+    
+    # Sensitivity coil parameters
+    sens_n_feat0: 24
+    sens_feature_dim: [36, 48, 60]
+    sens_prompt_dim: [12, 24, 36]
+    
+    # Prompt parameters
+    len_prompt: [5, 5, 5]
+    prompt_size: [64, 32, 16]
+    
+    # Network components
+    n_enc_cab: [2, 3, 3]
+    n_dec_cab: [2, 2, 3]
+    n_skip_cab: [1, 1, 1]
+    n_bottleneck_cab: 3
+    
+    # Feature switches
+    no_use_ca: false
+    learnable_prompt: false
+    adaptive_input: true
+    n_buffer: 4
+    n_history: 15
+    use_sens_adj: true
+    
+    # Other parameters
+    use_checkpoint: false
+    compute_sens_per_coil: false
+    pretrain: false
+    pretrain_weights_path: null
+    num_log_images: 16
+    
+    # Inference logging parameters
+    inference_log_frequency: 100  
+
+# Usage:
+# python main.py predict --config configs/inference/pmr-plus/cmr-task4-val_cs_with_sensmaps.yaml

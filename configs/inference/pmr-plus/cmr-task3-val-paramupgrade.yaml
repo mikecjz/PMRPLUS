@@ -1,0 +1,68 @@
+ckpt_path: /common/lidxxlab/cmrchallenge/task3/PromptMR-plus-Task3/logs/cmr2025_task3/43qr6fxh/checkpoints/best-epochepoch=13-valvalidation_loss=0.0206.ckpt
+
+data:
+  class_path: pl_modules.InferenceDataModule
+  init_args:
+    slice_dataset: data.CmrxReconInferenceSliceDataset
+    data_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Validation/Task4/TaskS2/MultiCoil
+    # data_path: /common/lidxxlab/cmrchallenge/data/CMR_2024_inference_sample/MultiCoil
+    challenge: multicoil
+    test_transform:
+      class_path: data.CmrxReconDataTransform
+ #     init_args:
+ #       mask_func: 
+ #         class_path: data.subsample.CmrxRecon25MaskFunc
+ #         init_args:
+ #           mask_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Processed/Mask/summary.h5
+ #           num_adj_slices: 5
+ #           num_low_frequencies:
+ #           - 16
+      init_args:
+        mask_func: null
+        uniform_resolution: null
+        use_seed: True
+        mask_type: 'cartesian_or_radial'
+        test_num_low_frequencies: 16
+        uniform_resolution: null
+        use_seed: true
+        
+        # test_num_low_frequencies: -1   # If mask_func is none, use this parameter
+    num_adj_slices: 7
+    batch_size: 1
+    num_workers: 1
+    # pin_memory: true
+    distributed_sampler: true
+    test_filter: 
+      class_path: data.FuncFilterString
+      init_args:
+        filter_str: null    
+        # T2w/ValidationSet/UnderSample_TaskR2 
+
+
+# dataset specific settings
+seed_everything: 42
+trainer:
+  accelerator: gpu
+  strategy: ddp
+  devices: auto
+  precision: 16 
+  num_nodes: 1
+
+
+  callbacks:
+    - class_path: __main__.CustomWriter
+      init_args:
+        output_dir: /common/lidxxlab/cmrchallenge/code/Inference/inf_TaskS2
+        write_interval: batch_and_epoch
+
+model:
+  class_path: pl_modules.PromptMrModule
+  init_args:
+    pretrain: false
+    pretrain_weights_path: null
+    num_adj_slices: 7
+    num_cascades: 16
+    n_history: 15
+
+
+# python main.py predict --config configs/inference/pmr-plus/cmr-task3-val-paramupgrade.yaml

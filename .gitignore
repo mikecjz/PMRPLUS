@@ -1,0 +1,16 @@
+*/__pycache__
+test_func/
+*.log
+output_chushu/
+debug_T*/
+reconstructions0717/
+*.xlsx
+*.sif
+*.png
+exp/
+lightning_logs/
+*.out
+.vscode/
+logs/
+wandb/
+wandb_logs/

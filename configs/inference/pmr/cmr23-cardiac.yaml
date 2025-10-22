@@ -1,0 +1,39 @@
+data:
+  class_path: pl_modules.InferenceDataModule
+  init_args:
+    slice_dataset: data.CmrxReconInferenceSliceDataset
+    data_path: /gpfs/home/bingyx01/mridatasets/cmrxrecon2023/validationset/undersample
+    challenge: multicoil
+    test_transform:
+      class_path: data.CmrxReconDataTransform
+      init_args:
+        mask_func: null
+        uniform_resolution: null
+        mask_type: 'cartesian'
+        test_num_low_frequencies: -1
+    num_adj_slices: &n_adj_slc 5
+    batch_size: 1
+    distributed_sampler: true 
+    test_filter: 
+      class_path: data.FuncFilterString
+      init_args:
+        filter_str: null #Cine/AccFactor10/P001/cine_lax.mat
+
+# dataset specific settings
+seed_everything: 42
+trainer:
+  accelerator: gpu
+  strategy: ddp
+  devices: 4
+  num_nodes: 1
+  logger: false
+  callbacks:
+    -
+      class_path: __main__.CustomWriter
+      init_args:
+        output_dir: _predict/cmr23-cardiac/test
+        write_interval: batch_and_epoch
+model:
+  class_path: pl_modules.PromptMrModule
+
+ckpt_path: weights/cmr23-cardiac/promptmr-epoch=11-step=258576.ckpt

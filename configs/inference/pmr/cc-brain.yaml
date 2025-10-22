@@ -1,0 +1,40 @@
+data:
+  class_path: pl_modules.InferenceDataModule
+  init_args:
+    slice_dataset: data.CalgaryCampinasSliceDataset
+    data_path: /gpfs/home/bingyx01/mridatasets/cc-brain/test_acc10
+    challenge: multicoil
+    test_transform:
+      class_path: data.CalgaryCampinasDataTransform
+      init_args:
+        mask_func: null
+        uniform_resolution: null
+        use_seed: true
+        mask_type: 'poisson_disc'
+        test_num_low_frequencies: 18
+    num_adj_slices: &n_adj_slc 5
+    batch_size: 1
+    distributed_sampler: false # need to set to false for inference, otherwise the batches will be smaller than expected, not sure why
+    test_filter: 
+      class_path: data.FuncFilterString
+      init_args:
+        filter_str: null #e14110s3_P59904.7.h5
+
+# dataset specific settings
+seed_everything: 42
+trainer:
+  accelerator: gpu
+  strategy: ddp
+  devices: 1
+  num_nodes: 1
+  logger: false
+  callbacks:
+    -
+      class_path: __main__.CustomWriter
+      init_args:
+        output_dir: _predict/cc-brain/test10
+        write_interval: batch_and_epoch
+model:
+  class_path: pl_modules.PromptMrModule
+
+ckpt_path: weights/cc-brain/promptmr-epoch=19-step=120320.ckpt

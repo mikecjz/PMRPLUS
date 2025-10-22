@@ -1,0 +1,146 @@
+data:
+  class_path: pl_modules.MultiDatasetDataModule
+  init_args:
+    # Dataset settings - multiple datasets
+    slice_dataset: data.CmrxReconSliceDataset  # in the data folder. 
+    data_paths: [
+      /common/lidxxlab/cmrchallenge/data/CMR2024/Processed,
+      #/common/lidxxlab/cmrchallenge/data/CMR2025/Processed
+      /common/lidxxlab/Yifan/PromptDiff/CMR2025/Processed_addmeta
+    ]
+    challenge: multicoil
+    
+    # Data balancing with dataset-specific strategies
+    data_balancer:
+      class_path: pl_modules.MultiDatasetBalanceSampler
+      init_args:
+        # 2024 dataset balancing ratios (from cmr24-cardiac.yaml)
+        ratio_dict_2024: {
+          'T1map': 2, 
+          'T2map': 6, 
+          'cine_lax': 2, 
+          'cine_sax': 1, 
+          'cine_lvot': 6, 
+          'aorta_sag': 1, 
+          'aorta_tra': 1,
+          'tagging': 1
+        }
+        # 2025 dataset balancing ratios (from cmr25-cardiac-task3-full.yaml)
+        ratio_dict_2025: {
+          'cine_rvot': 8,
+          'cine_sax': 1,
+          'lge_lax_4ch': 8,
+          'flow2d': 3,
+          'cine_lax': 8,
+          'T1w': 4,
+          'lge_sax': 2,
+          'T2map': 4,
+          'perfusion': 8,
+          'T1rho': 8,
+          'T1map': 3,
+          'cine_lax_3ch': 8,
+          'lge_lax_2ch': 8,
+          'cine_lax_2ch': 8,
+          'T1mappost': 8,
+          'T2w': 2,
+          'cine_lax_4ch': 8,
+          'lge_lax_3ch': 8,
+          'blackblood': 8,
+          'cine_lvot': 8,
+          'cine_ot': 8,
+          'lge_lax': 8,
+          'cine_lax_r2ch': 8,
+          'T2smap': 8,
+        }
+
+    # Training data transformation
+    train_transform:
+      class_path: data.CmrxReconDataTransform
+      init_args:
+        mask_func:
+          class_path: data.CmrxRecon25MaskFunc
+          init_args:
+            num_low_frequencies: [16]
+            num_adj_slices: 7
+            mask_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Processed/Mask/summary.h5
+        uniform_resolution: null
+        use_seed: false
+    
+    # Validation data transformation
+    val_transform:
+      class_path: data.CmrxReconDataTransform
+      init_args:
+        mask_func:
+          class_path: data.CmrxRecon25MaskFunc
+          init_args:
+            num_low_frequencies: [16]
+            num_adj_slices: 7
+            mask_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Processed/Mask/summary.h5
+        uniform_resolution: null
+        use_seed: true
+    
+    # Other data parameters
+    combine_train_val: false
+    num_adj_slices: 7 # adjacent slices to consider
+    batch_size: 1
+    distributed_sampler: true
+    use_dataset_cache_file: false
+
+seed_everything: 42
+trainer:
+  # Basic settings
+  accelerator: gpu                 # Use GPU acceleration
+  strategy: ddp                    # Distributed data parallel strategy
+  devices: auto                       # Use 4 GPUs
+  num_nodes: 1                     # Use 1 node
+  max_epochs: 50                   # Maximum training epochs
+  
+  # Optimization settings
+  gradient_clip_val: 0.001          # Gradient clipping value
+  log_every_n_steps: 50           # Log every 50 steps
+  deterministic: false             # Non-deterministic training
+  use_distributed_sampler: false   # Do not use distributed sampler
+  
+  # Logging settings
+  logger:
+    class_path: lightning.pytorch.loggers.WandbLogger
+    init_args:
+      project: cmr2024_2025_phased       # wandb project names
+      save_dir: ./lightning_logs  # Directory for saving logs
+      tags: [baseline, promptmr_plus, cmr24_25, dataset_specific]  # Tags
+      name: pmr_plus_cmr24_25_dataset_specific  # Run name
+      log_model: false
+      offline: false
+      
+  callbacks:
+      # Save BEST model (based on validation_loss) — monitors every epoch!
+      - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+        init_args:
+          monitor: validation_loss
+          mode: min
+          save_top_k: 5  # Save 5 best models
+          filename: "best-epoch{epoch:02d}-val{validation_loss:.4f}"
+          verbose: true
+      # Save LAST model every epoch
+      - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+        init_args:
+          every_n_epochs: 1
+          save_top_k: 0
+          filename: "last"
+          verbose: true
+      # Monitor learning rate changes
+      - class_path: lightning.pytorch.callbacks.LearningRateMonitor
+        init_args:
+          logging_interval: 'epoch'
+          log_momentum: false
+          log_weight_decay: false
+
+model:
+  class_path: pl_modules.PromptMrModule
+  init_args:
+    lr: 0.000002
+    lr_step_size: 10
+    lr_gamma: 0.1
+    kspace_loss_weight: 0.01  # Weight for k-space loss in combined loss function
+
+ckpt_path: null # add the path to the checkpoint if you want to resume training

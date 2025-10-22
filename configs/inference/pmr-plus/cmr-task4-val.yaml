@@ -1,0 +1,102 @@
+ckpt_path: /common/lidxxlab/Yi/training_results_folder/multi_dataset_training_kloss/promptmr-plus/CMR2024_2025_dataset_specific/cmr2024_2025_phased/or7cz3q3/checkpoints/best-epochepoch=04-valvalidation_loss=0.0165.ckpt
+# ckpt_path: /common/lidxxlab/Yi/training_results_folder/multi_dataset_training_kloss/promptmr-plus/CMR2024_2025_dataset_specific/cmr2024_2025_phased/ophww12n/checkpoints/best-epochepoch=08-valvalidation_loss=0.0156.ckpt
+data:
+  class_path: pl_modules.InferenceDataModule
+  init_args:
+    slice_dataset: data.CmrxReconInferenceSliceDataset
+    # data_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Validation/Task2/TaskR2/MultiCoil
+    # data_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Validation/TaskR1/MultiCoil
+    data_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Validation/Task4/TaskS2/MultiCoil
+    challenge: multicoil
+    test_transform:
+      class_path: data.CmrxReconDataTransform
+ #     init_args:
+ #       mask_func: 
+ #         class_path: data.subsample.CmrxRecon25MaskFunc
+ #         init_args:
+ #           mask_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Processed/Mask/summary.h5
+ #           num_adj_slices: 7
+ #           num_low_frequencies:
+ #           - 16
+      init_args:
+        mask_func: null
+        uniform_resolution: null
+        use_seed: True
+        mask_type: 'cartesian_or_radial'
+        test_num_low_frequencies: 16
+        uniform_resolution: null
+        use_seed: true
+        
+        # test_num_low_frequencies: -1   # If mask_func is none, use this parameter
+    num_adj_slices: 5 
+    batch_size: 1
+    num_workers: 1
+    # pin_memory: true
+    distributed_sampler: false 
+    test_filter: 
+      class_path: data.FuncFilterString
+      init_args:
+        filter_str: null
+
+
+# dataset specific settings
+seed_everything: 42
+trainer:
+  accelerator: gpu
+  strategy: ddp
+  devices: auto
+  precision: 16 
+  num_nodes: 1
+
+
+  callbacks:
+    - class_path: __main__.CustomWriter
+      init_args:
+        output_dir: /common/lidxxlab/cmrchallenge/code/Inference/inf_1015_20c19h_e4
+        write_interval: batch_and_epoch
+        
+
+model:
+  class_path: pl_modules.PromptMrModule
+  init_args:
+    # Model architecture 
+    num_cascades: 20               # Number of cascade blocks
+    num_adj_slices: 5              # Number of adjacent slices
+    n_feat0: 48                    # Base feature channels
+    
+    # Feature dimensions
+    feature_dim: [72, 96, 120]     # Feature dimensions for three levels
+    prompt_dim: [24, 48, 72]       # Prompt dimensions for three levels
+    
+    # Sensitivity coil parameters
+    sens_n_feat0: 24               # Base feature channels for sensitivity coil
+    sens_feature_dim: [36, 48, 60] # Feature dimensions for sensitivity coil
+    sens_prompt_dim: [12, 24, 36]  # Prompt dimensions for sensitivity coil
+    
+    # Prompt parameters
+    len_prompt: [5, 5, 5]          # Number of prompt components for each level
+    prompt_size: [64, 32, 16]      # Spatial size of prompt features
+    
+    # Network components
+    n_enc_cab: [2, 3, 3]           # Number of encoder CABs
+    n_dec_cab: [2, 2, 3]           # Number of decoder CABs
+    n_skip_cab: [1, 1, 1]          # Number of skip connection CABs
+    n_bottleneck_cab: 3            # Number of bottleneck CABs
+    
+    # Feature switches
+    no_use_ca: false               # Whether not to use channel attention
+    learnable_prompt: false        # Whether prompt parameters are learnable
+    adaptive_input: true           # Whether to use adaptive input
+    n_buffer: 4                    # Buffer size
+    n_history: 19                  # Number of history features
+    use_sens_adj: true             # Whether to use sensitivity coil adjacency processing
+    
+    # Other parameters
+    use_checkpoint: false          # Whether to use gradient checkpointing
+    compute_sens_per_coil: false   # Whether to compute sensitivity map per coil
+    pretrain: false                # Whether to use pretraining
+    pretrain_weights_path: null
+    num_log_images: 16             # Number of images to log
+
+
+# python main.py predict --config configs/inference/pmr-plus/cmr-task4-val.yaml

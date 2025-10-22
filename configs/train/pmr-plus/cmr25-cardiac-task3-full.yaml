@@ -1,0 +1,169 @@
+data:
+  class_path: pl_modules.DataModule
+  init_args:
+    # Dataset settings
+    slice_dataset: data.CmrxReconSliceDataset  # in the data folder. 
+    # data_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Processed/MultiCoil
+    data_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Processed/ # 3D T1w/T2w/Blackblood
+    # val_data_path: 
+    challenge: multicoil
+    
+    # Data balancing
+    data_balancer:
+      class_path: data.BalanceSampler
+      init_args:
+        ratio_dict: {
+          'cine_rvot': 8,
+          'cine_sax': 1,
+          'lge_lax_4ch': 8,
+          'flow2d': 3,
+          'cine_lax': 8,
+          'T1w': 4,
+          'lge_sax': 2,
+          'T2map': 4,
+          'perfusion': 8,
+          'T1rho': 8,
+          'T1map': 3,
+          'cine_lax_3ch': 8,
+          'lge_lax_2ch': 8,
+          'cine_lax_2ch': 8,
+          'T1mappost': 8,
+          'T2w': 2,
+          'cine_lax_4ch': 8,
+          'lge_lax_3ch': 8,
+          'blackblood': 8,
+          'cine_lvot': 8,
+          'cine_ot': 8,
+          'lge_lax': 8,
+          'cine_lax_r2ch': 8,
+          'T2smap': 8,
+      }
+
+    # Training data transformation
+    train_transform:
+      class_path: data.CmrxReconDataTransform
+      init_args:
+        mask_func:
+          class_path: data.CmrxRecon25MaskFunc
+          init_args:
+            num_low_frequencies: [16]
+            num_adj_slices: 5
+            mask_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Processed/Mask/summary.h5
+        uniform_resolution: null
+        use_seed: false
+    
+    # Validation data transformation
+    val_transform:
+      class_path: data.CmrxReconDataTransform
+      init_args:
+        mask_func:
+          class_path: data.CmrxRecon25MaskFunc
+          init_args:
+            num_low_frequencies: [16]
+            num_adj_slices: 5
+            mask_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Processed/Mask/summary.h5
+        uniform_resolution: null
+        use_seed: true
+    
+    # Other data parameters
+    combine_train_val: false
+    num_adj_slices: 5 # adjacent slices to consider
+    batch_size: 1
+    distributed_sampler: true
+    use_dataset_cache_file: false
+
+seed_everything: 42
+trainer:
+  # Basic settings
+  accelerator: gpu                 # Use GPU acceleration
+  strategy: ddp                    # Distributed data parallel strategy
+  devices: 4                       # Use 4 GPUs
+  num_nodes: 1                     # Use 1 node
+  max_epochs: 50                   # Maximum training epochs
+  
+  # Optimization settings
+  gradient_clip_val: 0.001          # Gradient clipping value
+  log_every_n_steps: 50           # Log every 50 steps
+  deterministic: false             # Non-deterministic training
+  use_distributed_sampler: false   # Do not use distributed sampler
+  
+  # Logging settings
+  logger:
+    class_path: lightning.pytorch.loggers.WandbLogger
+    init_args:
+      project: cmr2025_phased       # wandb project names
+      save_dir: /common/lidxxlab/cmrchallenge/task3/code/Lisha/Experiments  # 新的日志目录
+      tags: [baseline, promptmr_plus, comparison]  # Tags
+      name: pmr_plus_baseline_comparison  # Run name
+      log_model: false
+      offline: false
+      
+  callbacks:
+      # Save BEST model (based on validation_loss) — monitors every epoch!
+      - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+        init_args:
+          monitor: validation_loss
+          mode: min
+          save_top_k: 1
+          filename: "best-epoch{epoch:02d}-val{validation_loss:.4f}"
+          verbose: true
+
+      # Save LAST checkpoint every 10 epochs — no monitoring
+      - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+        init_args:
+          every_n_epochs: 10
+          save_top_k: 0
+          filename: "last"
+          verbose: true
+
+
+model:
+  class_path: pl_modules.PromptMrModule
+  init_args:
+    # Model architecture
+    num_cascades: 12               # Number of cascade blocks
+    num_adj_slices: 5              # Number of adjacent slices
+    n_feat0: 48                    # Base feature channels
+    
+    # Feature dimensions
+    feature_dim: [72, 96, 120]     # Feature dimensions for three levels
+    prompt_dim: [24, 48, 72]       # Prompt dimensions for three levels
+    
+    # Sensitivity coil parameters
+    sens_n_feat0: 24               # Base feature channels for sensitivity coil
+    sens_feature_dim: [36, 48, 60] # Feature dimensions for sensitivity coil
+    sens_prompt_dim: [12, 24, 36]  # Prompt dimensions for sensitivity coil
+    
+    # Prompt parameters
+    len_prompt: [5, 5, 5]          # Number of prompt components for each level
+    prompt_size: [64, 32, 16]      # Spatial size of prompt features
+    
+    # Network components
+    n_enc_cab: [2, 3, 3]           # Number of encoder CABs
+    n_dec_cab: [2, 2, 3]           # Number of decoder CABs
+    n_skip_cab: [1, 1, 1]          # Number of skip connection CABs
+    n_bottleneck_cab: 3            # Number of bottleneck CABs
+    
+    # Feature switches
+    no_use_ca: false               # Whether not to use channel attention
+    learnable_prompt: false        # Whether prompt parameters are learnable
+    adaptive_input: true           # Whether to use adaptive input
+    n_buffer: 4                    # Buffer size
+    n_history: 11                  # Number of history features
+    use_sens_adj: true             # Whether to use sensitivity coil adjacency processing
+    
+    # Optimizer parameters
+    lr: 0.0002                     # Learning rate
+    lr_step_size: 11               # Learning rate step size
+    lr_gamma: 0.1                  # Learning rate decay factor
+    weight_decay: 0.01             # Weight decay
+    
+    # Other parameters
+    use_checkpoint: false          # Whether to use gradient checkpointing
+    compute_sens_per_coil: false   # Whether to compute sensitivity map per coil
+    pretrain: false                # Whether to use pretraining
+    num_log_images: 16             # Number of images to log
+
+ckpt_path: null
+
+

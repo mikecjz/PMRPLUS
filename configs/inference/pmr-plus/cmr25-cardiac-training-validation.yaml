@@ -1,0 +1,120 @@
+data:
+  class_path: pl_modules.DataModule
+  init_args:
+    batch_size: 1
+    challenge: multicoil
+    combine_train_val: false
+    data_balancer:
+      class_path: data.BalanceSampler
+      init_args:
+        ratio_dict:
+          T1map: 1
+          T1rho: 2
+          T1w: 2
+          T2map: 1
+          T2smap: 8
+          T2w: 2
+          cine_lax: 1
+          lge_lax: 1
+          cine_sax: 1
+          lge_sax: 1
+          cine_ot: 5
+          cine_lvot: 8
+          cine_rvot: 8
+          perfusion: 2
+          blackblood: 8
+          flow2d: 4
+
+    data_path: /common/lidxxlab/cmrchallenge/data/CMR2025/ProcessedDirectInference
+    distributed_sampler: false
+    num_adj_slices: 5
+    slice_dataset: data.CmrxReconSliceDataset
+    train_transform:
+      class_path: data.CmrxReconDataTransform
+      init_args:
+        mask_func:
+          class_path: data.subsample.CmrxRecon25MaskFunc
+          init_args:
+            mask_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Processed/Mask/summary.h5
+            num_adj_slices: 5
+            num_low_frequencies:
+            - 16
+        uniform_resolution: null
+        use_seed: true
+    use_dataset_cache_file: false
+    val_transform:
+      class_path: data.CmrxReconDataTransform
+      init_args:
+        mask_func:
+          class_path: data.subsample.CmrxRecon25MaskFunc
+          init_args:
+            mask_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Processed/Mask/summary.h5
+            num_adj_slices: 5
+            num_low_frequencies:
+            - 16
+        uniform_resolution: null
+        use_seed: true
+        
+# dataset specific settings
+seed_everything: 42
+trainer:
+  accelerator: gpu
+  strategy: ddp
+  devices: auto
+  num_nodes: 1
+  logger: False
+  callbacks:
+    -
+      class_path: __main__.CustomWriter
+      init_args:
+        output_dir: /common/lidxxlab/cmrchallenge/code/Inference/inf_holdout_16c5adj
+        write_interval: batch_and_epoch
+        save_masked_kspace: true
+        masked_kspace_output_dir: /common/lidxxlab/cmrchallenge/code/Inference/inf_holdout_masked
+
+model:
+  class_path: pl_modules.PromptMrModule
+  init_args:
+    # Model architecture 
+    num_cascades: 20               # Number of cascade blocks
+    num_adj_slices: 5              # Number of adjacent slices
+    n_feat0: 48                    # Base feature channels
+    
+    # Feature dimensions
+    feature_dim: [72, 96, 120]     # Feature dimensions for three levels
+    prompt_dim: [24, 48, 72]       # Prompt dimensions for three levels
+    
+    # Sensitivity coil parameters
+    sens_n_feat0: 24               # Base feature channels for sensitivity coil
+    sens_feature_dim: [36, 48, 60] # Feature dimensions for sensitivity coil
+    sens_prompt_dim: [12, 24, 36]  # Prompt dimensions for sensitivity coil
+    
+    # Prompt parameters
+    len_prompt: [5, 5, 5]          # Number of prompt components for each level
+    prompt_size: [64, 32, 16]      # Spatial size of prompt features
+    
+    # Network components
+    n_enc_cab: [2, 3, 3]           # Number of encoder CABs
+    n_dec_cab: [2, 2, 3]           # Number of decoder CABs
+    n_skip_cab: [1, 1, 1]          # Number of skip connection CABs
+    n_bottleneck_cab: 3            # Number of bottleneck CABs
+    
+    # Feature switches
+    no_use_ca: false               # Whether not to use channel attention
+    learnable_prompt: false        # Whether prompt parameters are learnable
+    adaptive_input: true           # Whether to use adaptive input
+    n_buffer: 4                    # Buffer size
+    n_history: 15                  # Number of history features
+    use_sens_adj: true             # Whether to use sensitivity coil adjacency processing
+    
+    # Other parameters
+    use_checkpoint: false          # Whether to use gradient checkpointing
+    compute_sens_per_coil: false   # Whether to compute sensitivity map per coil
+    pretrain: false                # Whether to use pretraining
+    pretrain_weights_path: null
+    num_log_images: 16             # Number of images to log
+
+
+ckpt_path: /common/lidxxlab/Yi/training_results_folder/multi_dataset_training_kloss/promptmr-plus/CMR2024_2025_dataset_specific/cmr2024_2025_phased/ophww12n/checkpoints/best-epochepoch=08-valvalidation_loss=0.0156.ckpt
+
+# python main.py predict --config configs/inference/pmr-plus/cmr25-cardiac-training-validation.yaml
