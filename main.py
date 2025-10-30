@@ -190,7 +190,7 @@ class CustomWriter(BasePredictionWriter):
                 })
                 
         # Directory for saving the final volumes
-        save_dir = self.output_dir / "TaskS2/MultiCoil"
+        save_dir = self.output_dir 
         save_dir.mkdir(parents=True, exist_ok=True)
 
         # --- FIX #1: This entire block replaces your old "Sort and Stack" logic ---
@@ -245,11 +245,11 @@ class CustomWriter(BasePredictionWriter):
                     # Take the first time frame and remove the time dimension
                     final_volume = final_4d_volume[0]  # Shape: (num_slices_per_time, h, w)
                     print(f"Saving 3D volume for {fname} with shape {final_volume.shape}")
-                    save_reconstructions(final_volume, fname, save_dir)
+                    save_reconstructions(final_volume, fname, save_dir, is_mat=True, is_3d=True)
                 else:
                     print(f"Saving 4D volume for {fname} with shape {final_4d_volume.shape}")
                     # The save function is now much simpler
-                    save_reconstructions(final_4d_volume, fname, save_dir)
+                    save_reconstructions(final_4d_volume, fname, save_dir, is_mat=True)
                 
                 # Save masked k-space and masks if enabled
                 if self.save_masked_kspace and stacked_masked_kspace is not None:
@@ -418,7 +418,7 @@ def run_cli():
     preprocess_save_dir()
 
     cli = CustomLightningCLI(
-        save_config_callback=CustomSaveConfigCallback,
+        save_config_callback=None,
         save_config_kwargs={"overwrite": True},
         run=True  # Let Lightning handle predict()
     )

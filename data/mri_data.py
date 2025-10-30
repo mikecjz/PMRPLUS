@@ -672,14 +672,7 @@ class CmrxReconInferenceSliceDataset(torch.utils.data.Dataset):
         volume_paths = [p for p in all_paths if not p.name.startswith('._')]
         #print('volume_paths:',volume_paths)
 
-        if '2023' in str(self.root):
-            self.year = 2023 
-        elif '2024' in str(self.root):
-            self.year = 2024
-        elif '2025' in str(self.root):
-            self.year = 2025
-        else:
-            raise ValueError('Invalid dataset root')
+        self.year = 2025
         #
         if self.year == 2023:
             # filter out files contains '_mask.mat'

@@ -1,0 +1,6 @@
+debug_T*/
+exp/
+logs/
+.git/
+*.tar
+*.sif

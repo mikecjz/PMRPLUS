@@ -1,11 +1,25 @@
 #ckpt_path: /common/lidxxlab/chushu/augmented_data_training_results/16cascade_with_data_augmentation/cmr2024_2025_augmented/8ydpc561/checkpoints/best-epochepoch=04-valvalidation_loss=0.0225.ckpt
 #ckpt_path: /common/lidxxlab/chushu/augmented_data_training_results/16cascade_with_data_augmentation/cmr2024_2025_augmented/8ydpc561/checkpoints/best-epochepoch=05-valvalidation_loss=0.0224.ckpt
-ckpt_path: /common/lidxxlab/Yi/augmented_data_training_results1015/16cascade_with_data_augmentation_continue/cmr2024_2025_augmented/1hgnz3ej/checkpoints/best-epochepoch=04-valvalidation_loss=0.0271.ckpt
-
+#ckpt_path: /common/lidxxlab/Yi/augmented_data_training_results1015/16cascade_with_data_augmentation_continue/cmr2024_2025_augmented/1hgnz3ej/checkpoints/best-epochepoch=04-valvalidation_loss=0.0271.ckpt
+#ckpt_path: /common/lidxxlab/chushu/augmented_data_training_results1015/16cascade_with_data_augmentation_continue/cmr2024_2025_augmented/2ob79yr3/checkpoints/best-epochepoch=06-valvalidation_loss=0.0132.ckpt
+#ckpt_path: /common/lidxxlab/Yi/augmented_data_training_results1022/16cascade_with_data_augmentation_continue/cmr2024_2025_augmented/hfygjfvh/checkpoints/best-epochepoch=05-valvalidation_loss=0.0167.ckpt
+#ckpt_path: /common/lidxxlab/cmrchallenge/task3/PromptMR-plus-Task4_kloss/multi_dataset_training_kloss/promptmr-plus/CMR2024_2025_dataset_specific/cmr2024_2025_phased/63g54ggy/checkpoints/best-epochepoch=09-valvalidation_loss=0.0142.ckpt
+#ckpt_path: /common/lidxxlab/Yi/augmented_data_training_results1025_small_fov/16cascade_with_data_augmentation_continue/cmr2024_2025_augmented/b6li5v80/checkpoints/best-epochepoch=03-valvalidation_loss=0.0170.ckpt
+ckpt_path: /common/lidxxlab/Yi/augmented_data_training_results1025_intensity_FOV_combined1/16cascade_with_data_augmentation_continue/cmr2024_2025_augmented/wp6m2z1q/restored_ckpts/best-epochepoch=01-valvalidation_loss=0.0145-v2.ckpt
+# /common/lidxxlab/chushu/augmented_data_training_results_3T_only_5e-6/16cascade_with_data_augmentation/cmr2024_2025_augmented/rdognlts/checkpoints/best-epochepoch=03-valvalidation_loss=0.0146.ckpt
+# /common/lidxxlab/Yi/augmented_data_training_results1025_intensity_FOV_combined1/16cascade_with_data_augmentation_continue/cmr2024_2025_augmented/wp6m2z1q/ckpt_copy/checkpoints/best-epochepoch=02-valvalidation_loss=0.0144-v4.ckpt
+# /common/lidxxlab/Yi/augmented_data_training_results1025_intensity_FOV_combined1/16cascade_with_data_augmentation_continue/cmr2024_2025_augmented/wp6m2z1q/checkpoints/best-epochepoch=01-valvalidation_loss=0.0145.ckpt
+# /common/lidxxlab/chushu/augmented_data_training_results_3T_only_5e-6/16cascade_with_data_augmentation/cmr2024_2025_augmented/rdognlts/checkpoints/best-epochepoch=01-valvalidation_loss=0.0147.ckpt
+#/common/lidxxlab/Yi/augmented_data_training_results1025_intensity_FOV_combined1/16cascade_with_data_augmentation_continue/cmr2024_2025_augmented/u3cd9enj/checkpoints/best-epochepoch=08-valvalidation_loss=0.0147.ckpt
+#/common/lidxxlab/cmrchallenge/task3/PromptMR-plus-Task4_kloss/multi_dataset_training_kloss/promptmr-plus/CMR2024_2025_dataset_specific/cmr2024_2025_phased/4011nm3j/checkpoints/best-epochepoch=10-valvalidation_loss=0.0129.ckpt
+#/common/lidxxlab/cmrchallenge/task3/PromptMR-plus-Task4_kloss/multi_dataset_training_3T_finetune2/promptmr-plus/CMR2024_2025_dataset_specific/cmr2024_2025_phased/bosarbui/checkpoints/best-epochepoch=00-valvalidation_loss=0.0130.ckpt
+#/common/lidxxlab/Yi/augmented_data_training_results1025_intensity_FOV_combined1/16cascade_with_data_augmentation_continue/cmr2024_2025_augmented/dwv7okdy/checkpoints/best-epochepoch=07-valvalidation_loss=0.0127.ckpt
+# /common/lidxxlab/cmrchallenge/task3/PromptMR-plus-Task4_kloss/multi_dataset_training_kloss/promptmr-plus/CMR2024_2025_dataset_specific/cmr2024_2025_phased/4011nm3j/checkpoints/best-epochepoch=11-valvalidation_loss=0.0127.ckpt
+#/common/lidxxlab/Yi/augmented_data_training_results1022/16cascade_with_data_augmentation_continue/cmr2024_2025_augmented/hfygjfvh/checkpoints/best-epochepoch=03-valvalidation_loss=0.0169.ckpt
 # /common/lidxxlab/chushu/training_results_folder/Perfusion_augmented1013/promptmr-plus/CMR2025/deep_recon/wwuzjz0q/checkpoints/epoch=12-step=403890.ckpt
 #/common/lidxxlab/Yi/training_results_folder/multi_dataset_training_kloss/promptmr-plus/CMR2024_2025_dataset_specific/cmr2024_2025_phased/z212ttat/checkpoints/best-epochepoch=02-valvalidation_loss=0.0175.ckpt
 #/common/lidxxlab/Yi/training_results_folder/multi_dataset_training_kloss/promptmr-plus/CMR2024_2025_dataset_specific/cmr2024_2025_phased/ophww12n/checkpoints/best-epochepoch=08-valvalidation_loss=0.0156.ckpt
-data:
+data: 
   class_path: pl_modules.InferenceDataModule
   init_args:
     slice_dataset: data.CmrxReconInferenceSliceDataset
@@ -42,7 +56,7 @@ seed_everything: 42
 trainer:
   accelerator: gpu
   strategy: auto  # 改为auto，推理时更稳定
-  devices: 4      # 推理时建议使用单GPU
+  devices: 3      # 推理时建议使用单GPU
   precision: 16 
   num_nodes: 1
 
@@ -50,7 +64,8 @@ trainer:
   callbacks:
     - class_path: __main__.CustomWriter
       init_args:
-        output_dir: /common/lidxxlab/cmrchallenge/code/Inference/inf_augmented_cs1020_intensity_adjusted
+        output_dir: /common/lidxxlab/cmrchallenge/code/Inference/3T_only_new_epoch1_v2_2e-6
+        #/common/lidxxlab/cmrchallenge/code/Inference/small_FOV1025_epoch3
         write_interval: batch_and_epoch
         
 
